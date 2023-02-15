@@ -1,0 +1,10 @@
+.{
+    .name = "zig-objdump",
+    .version = "0.0.1",
+    .dependencies = .{
+        .@"zig-dis-x86_64" = .{
+            .url = "https://github.com/kubkon/zig-dis-x86_64/archive/4a183e264b2fd9c0ce1373e7e6a4ce5d40848a17.tar.gz",
+            .hash = "1220e0f2cdc313a55eaf172033934d319dafba77425b05d172b6db2ad38a272487c5",
+        },
+    }
+}
