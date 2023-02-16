@@ -22,6 +22,7 @@ pub fn build(b: *std.Build.Builder) void {
     exe.install();
 
     const run_cmd = exe.run();
+    run_cmd.condition = .always;
     run_cmd.step.dependOn(b.getInstallStep());
     if (b.args) |args| {
         run_cmd.addArgs(args);
