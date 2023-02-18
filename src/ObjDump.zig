@@ -43,6 +43,17 @@ pub fn dump(obj: *const ObjDump, writer: anytype) !void {
         const SymSort = struct {
             pub fn lessThan(ctx: void, lhs: std.elf.Elf64_Sym, rhs: std.elf.Elf64_Sym) bool {
                 _ = ctx;
+                if (lhs.st_value == rhs.st_value) {
+                    const lhs_bind = lhs.st_info >> 4;
+                    const rhs_bind = rhs.st_info >> 4;
+                    if (lhs_bind == std.elf.STB_GLOBAL) return true;
+                    if (lhs_bind == std.elf.STB_WEAK) return switch (rhs_bind) {
+                        std.elf.STB_GLOBAL => return false,
+                        else => return true,
+                    };
+                    if (lhs_bind == std.elf.STB_LOCAL and rhs_bind == std.elf.STB_LOCAL) return true;
+                    return false;
+                }
                 return lhs.st_value < rhs.st_value;
             }
         };
@@ -62,22 +73,33 @@ pub fn dump(obj: *const ObjDump, writer: anytype) !void {
 
         std.sort.sort(std.elf.Elf64_Sym, symbols.items, {}, SymSort.lessThan);
 
-        switch (elf.header.e_machine.toTargetCpuArch().?) {
-            .x86_64 => try obj.disassembleX8664(data, shdr, symbols.items, writer),
-            else => |arch| {
-                return writer.print("TODO add disassembler for {s}\n", .{@tagName(arch)});
-            },
+        var current_offset: ?u64 = null;
+
+        for (symbols.items) |sym, i| {
+            const offset = sym.st_value - shdr.sh_addr;
+            if (current_offset) |off| {
+                if (off == offset) continue;
+            }
+            const size = sym.st_size;
+            const code = data[offset..][0..size];
+
+            switch (elf.header.e_machine.toTargetCpuArch().?) {
+                .x86_64 => try obj.disassembleX8664(code, sym, writer),
+                else => |arch| {
+                    return writer.print("TODO add disassembler for {s}\n", .{@tagName(arch)});
+                },
+            }
+
+            if (i + 1 < symbols.items.len) {
+                try writer.writeAll("...\n\n");
+            }
+
+            current_offset = offset;
         }
     }
 }
 
-fn disassembleX8664(
-    obj: *const ObjDump,
-    data: []const u8,
-    shdr: std.elf.Elf64_Shdr,
-    symbols: []const std.elf.Elf64_Sym,
-    writer: anytype,
-) !void {
+fn disassembleX8664(obj: *const ObjDump, data: []const u8, sym: std.elf.Elf64_Sym, writer: anytype) !void {
     const elf = obj.ctx.asConst(Context.Elf).?;
     var disassembler = Disassembler.init(data);
     var pos: usize = 0;
@@ -85,27 +107,11 @@ fn disassembleX8664(
     const padding = [_]u8{' '} ** 8;
     const max_inst_length = 8;
 
-    const Symtab = struct {
-        symbols: []const std.elf.Elf64_Sym,
-
-        pub fn findByAddress(self: @This(), vmaddr: u64) ?std.elf.Elf64_Sym {
-            for (self.symbols) |sym| {
-                if (sym.st_value == vmaddr) return sym;
-            } else return null;
-        }
-    };
-
-    var symtab = Symtab{ .symbols = symbols };
+    const name = elf.getString(sym.st_name);
+    try writer.print("{x:0>16} <{s}>:\n", .{ sym.st_value, name });
 
     while (try disassembler.next()) |inst| {
-        const vmaddr = shdr.sh_addr + pos;
-
-        if (symtab.findByAddress(vmaddr)) |sym| {
-            const name = elf.getString(sym.st_name);
-            try writer.print("{x:0>16} <{s}>:\n", .{ vmaddr, name });
-        }
-
-        try writer.print("{x:0>16}:", .{vmaddr});
+        try writer.print("{x:0>16}:", .{sym.st_value + pos});
         try writer.writeAll(&padding);
 
         const slice = data[pos..disassembler.pos];
