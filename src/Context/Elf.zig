@@ -37,7 +37,7 @@ pub fn parse(gpa: Allocator, data: []const u8) !*Elf {
     elf.header = @ptrCast(*const std.elf.Elf64_Ehdr, @alignCast(@alignOf(std.elf.Elf64_Ehdr), data.ptr)).*;
 
     const shdrs = elf.getShdrs();
-    const symtab_shndx = for (shdrs) |shdr, i| switch (shdr.sh_type) {
+    const symtab_shndx = for (shdrs, 0..) |shdr, i| switch (shdr.sh_type) {
         std.elf.SHT_SYMTAB => break @intCast(u16, i),
         else => {},
     } else null;
@@ -58,7 +58,7 @@ pub fn parse(gpa: Allocator, data: []const u8) !*Elf {
 
 pub fn getShdrIndexByName(elf: *const Elf, name: []const u8) ?u32 {
     const shdrs = elf.getShdrs();
-    for (shdrs) |shdr, i| {
+    for (shdrs, 0..) |shdr, i| {
         const shdr_name = elf.getShString(shdr.sh_name);
         if (std.mem.eql(u8, shdr_name, name)) return @intCast(u32, i);
     }

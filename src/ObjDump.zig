@@ -75,7 +75,7 @@ pub fn dump(obj: *const ObjDump, writer: anytype) !void {
 
         var current_offset: ?u64 = null;
 
-        for (symbols.items) |sym, i| {
+        for (symbols.items, 0..) |sym, i| {
             const offset = sym.st_value - shdr.sh_addr;
             if (current_offset) |off| {
                 if (off == offset) continue;
