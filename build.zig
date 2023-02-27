@@ -17,7 +17,7 @@ pub fn build(b: *std.Build.Builder) void {
     });
     // exe.addModule("dis_x86_64", zig_dis_x86_64.module("dis_x86_64"));
     exe.addAnonymousModule("dis_x86_64", .{
-        .source_file = .{ .path = "zig-dis-x86_64/src/dis_x86_64.zig" },
+        .source_file = .{ .path = "zig-dis-x86_64/src/main.zig" },
     });
     exe.install();
 
