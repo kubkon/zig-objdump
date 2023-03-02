@@ -46,13 +46,23 @@ pub fn dump(obj: *const ObjDump, writer: anytype) !void {
                 if (lhs.st_value == rhs.st_value) {
                     const lhs_bind = lhs.st_info >> 4;
                     const rhs_bind = rhs.st_info >> 4;
-                    if (lhs_bind == std.elf.STB_GLOBAL) return true;
-                    if (lhs_bind == std.elf.STB_WEAK) return switch (rhs_bind) {
-                        std.elf.STB_GLOBAL => return false,
-                        else => return true,
-                    };
-                    if (lhs_bind == std.elf.STB_LOCAL and rhs_bind == std.elf.STB_LOCAL) return true;
-                    return false;
+                    switch (lhs_bind) {
+                        std.elf.STB_GLOBAL => switch (rhs_bind) {
+                            std.elf.STB_GLOBAL => unreachable,
+                            std.elf.STB_WEAK, std.elf.STB_LOCAL => return true,
+                            else => unreachable,
+                        },
+                        std.elf.STB_WEAK => switch (rhs_bind) {
+                            std.elf.STB_GLOBAL, std.elf.STB_WEAK => return false,
+                            std.elf.STB_LOCAL => return true,
+                            else => unreachable,
+                        },
+                        std.elf.STB_LOCAL => switch (rhs_bind) {
+                            std.elf.STB_GLOBAL, std.elf.STB_WEAK, std.elf.STB_LOCAL => return false,
+                            else => unreachable,
+                        },
+                        else => unreachable,
+                    }
                 }
                 return lhs.st_value < rhs.st_value;
             }
