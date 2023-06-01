@@ -3,8 +3,8 @@
     .version = "0.0.1",
     .dependencies = .{
         .@"zig-dis-x86_64" = .{
-            .url = "https://github.com/kubkon/zig-dis-x86_64/archive/1b4540005c8bf0f91efe1635a756fbef4ba052d9.tar.gz",
-            .hash = "12200bfcbebc6a64f0dfd64fa66c01c5fda2850dc4269bddc1311a2ee71e154de0ae",
+            .url = "https://github.com/kubkon/zig-dis-x86_64/archive/920e46978b031d889350aa2d2d5cdd7a66475f05.tar.gz",
+            .hash = "12207f95722e22e094e5e3ceb671d6c50dacb7054c7d964475be14a30e3d7fcbd2e6",
         },
     }
 }

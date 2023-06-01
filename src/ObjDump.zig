@@ -71,8 +71,7 @@ pub fn dump(obj: *const ObjDump, writer: anytype) !void {
         for (elf.symtab.items) |sym| {
             const shndx = sym.st_shndx;
             switch (sym.st_shndx) {
-                std.elf.SHN_UNDEF, std.elf.SHN_LIVEPATCH => continue,
-                std.elf.SHN_ABS => return error.TODOAbsSymbol,
+                std.elf.SHN_UNDEF, std.elf.SHN_LIVEPATCH, std.elf.SHN_ABS => continue,
                 std.elf.SHN_COMMON => return error.TODOCommonSymbol,
                 else => {},
             }
@@ -81,7 +80,7 @@ pub fn dump(obj: *const ObjDump, writer: anytype) !void {
             try symbols.append(sym);
         }
 
-        std.sort.sort(std.elf.Elf64_Sym, symbols.items, {}, SymSort.lessThan);
+        std.mem.sort(std.elf.Elf64_Sym, symbols.items, {}, SymSort.lessThan);
 
         var current_offset: ?u64 = null;
 
@@ -134,8 +133,7 @@ fn disassembleX8664(obj: *const ObjDump, data: []const u8, sym: std.elf.Elf64_Sy
             }
         }
 
-        try inst.fmtPrint(writer);
-        try writer.writeByte('\n');
+        try writer.print("  {}\n", .{inst});
 
         pos = disassembler.pos;
     }

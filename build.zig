@@ -16,10 +16,9 @@ pub fn build(b: *std.Build.Builder) void {
         .optimize = mode,
     });
     exe.addModule("dis_x86_64", zig_dis_x86_64.module("dis_x86_64"));
-    exe.install();
+    b.installArtifact(exe);
 
-    const run_cmd = exe.run();
-    run_cmd.condition = .always;
+    const run_cmd = b.addRunArtifact(exe);
     run_cmd.step.dependOn(b.getInstallStep());
     if (b.args) |args| {
         run_cmd.addArgs(args);
